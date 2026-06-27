@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { Heart, RefreshCw, CheckCircle, Shield } from "lucide-react";
 import { DonationThermometer } from "./donation-thermometer";
+import { API_BASE, PAYSTACK_PUBLIC_KEY } from "../config";
 
 const SUGGESTED = [1000, 5000, 10000, 25000, 50000, 100000];
 
@@ -32,8 +33,39 @@ export function DonationEngine() {
 
   function handleDonate(e: React.FormEvent) {
     e.preventDefault();
+    const Paystack = (window as any).PaystackPop;
+    if (!Paystack) {
+      alert("The payment library could not load. Please check your connection and try again.");
+      return;
+    }
     setSubmitting(true);
-    setTimeout(() => { setStep("done"); setSubmitting(false); }, 1500);
+    const handler = Paystack.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: form.email,
+      amount: Math.round(amount * 100), // Paystack charges in kobo
+      currency: "NGN",
+      metadata: {
+        name: form.name,
+        phone: form.phone,
+        recurring,
+        custom_fields: [
+          { display_name: "Donor Name", variable_name: "donor_name", value: form.name },
+          { display_name: "Phone", variable_name: "phone", value: form.phone || "—" },
+          { display_name: "Frequency", variable_name: "frequency", value: recurring ? "Monthly" : "One-time" },
+        ],
+      },
+      callback: function (response: { reference: string }) {
+        fetch(`${API_BASE}/donate-verify.php`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference: response.reference }),
+        })
+          .catch(() => {}) // payment already captured; webhook reconciles
+          .finally(() => { setSubmitting(false); setStep("done"); });
+      },
+      onClose: function () { setSubmitting(false); },
+    });
+    handler.openIframe();
   }
 
   return (

@@ -20,6 +20,7 @@ import { VoterToolkit } from "./components/voter-toolkit";
 import { DonationEngine } from "./components/donation-engine";
 import { VolunteerForm } from "./components/volunteer-form";
 import { CandidateBio } from "./components/candidate-bio";
+import { API_BASE } from "./config";
 
 import photo3 from "../imports/photo_3_2026-06-17_21-13-04-1.jpg";
 import photo5 from "../imports/photo_5_2026-06-17_21-13-04-1.jpg";
@@ -35,7 +36,13 @@ export default function App() {
 
   function handleNewsletter(e: React.FormEvent) {
     e.preventDefault();
-    setTimeout(() => setNewsletterDone(true), 800);
+    fetch(`${API_BASE}/subscribe.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: nlForm.email, phone: nlForm.phone, channel: nlForm.channel, source: "newsletter" }),
+    })
+      .catch(() => {})
+      .finally(() => setNewsletterDone(true));
   }
 
   return (

@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { Users, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { API_BASE } from "../config";
 
 const STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
 const ROLES = ["Polling Unit Agent","Ward Coordinator","Digital/Social Media","Community Mobiliser","Event Support","Data Entry","Logistics & Transport"];
@@ -15,7 +16,13 @@ export function VolunteerForm() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => { setDone(true); setSubmitting(false); }, 1400);
+    fetch(`${API_BASE}/volunteer.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    })
+      .catch(() => {})
+      .finally(() => { setDone(true); setSubmitting(false); });
   }
 
   const inputClass = "w-full px-4 py-3 rounded-xl focus:outline-none transition-colors text-sm";

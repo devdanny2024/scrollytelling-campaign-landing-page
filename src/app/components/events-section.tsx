@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { CalendarDays, MapPin, Clock, Users, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { API_BASE } from "../config";
 
 const events = [
   { date: { day: "28", month: "Jun" }, title: "Nkanu West Mega Rally — Obe Community Square", location: "Obe, Nkanu West LGA", time: "10:00am – 2:00pm", type: "Rally", spotsLeft: 4820 },
@@ -20,7 +21,13 @@ export function EventsSection() {
   function handleSubmit(e: React.FormEvent, i: number) {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => { setRsvpd((prev) => ({ ...prev, [i]: true })); setActiveRsvp(null); setSubmitting(false); setForm({ name: "", phone: "", email: "", channel: "whatsapp" }); }, 1200);
+    fetch(`${API_BASE}/rsvp.php`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventTitle: events[i].title, name: form.name, phone: form.phone, email: form.email, channel: form.channel }),
+    })
+      .catch(() => {})
+      .finally(() => { setRsvpd((prev) => ({ ...prev, [i]: true })); setActiveRsvp(null); setSubmitting(false); setForm({ name: "", phone: "", email: "", channel: "whatsapp" }); });
   }
 
   const typeColors: Record<string, string> = { Rally: "var(--core-green)", "Town Hall": "var(--core-green)", Briefing: "#92400e" };
