@@ -20,7 +20,7 @@ import { VoterToolkit } from "./components/voter-toolkit";
 import { DonationEngine } from "./components/donation-engine";
 import { VolunteerForm } from "./components/volunteer-form";
 import { CandidateBio } from "./components/candidate-bio";
-import { API_BASE } from "./config";
+import { API_BASE, scrollToId } from "./config";
 
 import photo3 from "../imports/photo_3_2026-06-17_21-13-04-1.jpg";
 import photo5 from "../imports/photo_5_2026-06-17_21-13-04-1.jpg";
@@ -99,8 +99,8 @@ export default function App() {
               </p>
 
               <div className="flex gap-3 md:gap-6 flex-wrap">
-                <CampaignButton variant="solid">Support the Campaign</CampaignButton>
-                <CampaignButton variant="ghost" className="!border-[var(--core-green)] !text-[var(--core-green)]">Join Us</CampaignButton>
+                <CampaignButton variant="solid" onClick={() => scrollToId("donate")}>Support the Campaign</CampaignButton>
+                <CampaignButton variant="ghost" className="!border-[var(--core-green)] !text-[var(--core-green)]" onClick={() => scrollToId("get-involved")}>Join Us</CampaignButton>
               </div>
             </motion.div>
           </div>
@@ -249,7 +249,7 @@ export default function App() {
       </section>
 
       {/* ── GET INVOLVED ── */}
-      <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--cream)]">
+      <section id="get-involved" className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--cream)]">
         <div className="max-w-7xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
             className="text-center mb-10 md:mb-16">
@@ -268,7 +268,7 @@ export default function App() {
               <p className="text-sm md:text-base mb-6 leading-relaxed flex-1" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.85 }}>
                 Fund grassroots mobilisation, community engagement, and the ground operation that will deliver victory for Nkanu. One-time or recurring — every contribution counts.
               </p>
-              <CampaignButton variant="solid" className="w-full">Donate Now</CampaignButton>
+              <CampaignButton variant="solid" className="w-full" onClick={() => scrollToId("donate")}>Donate Now</CampaignButton>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.15 }}>
               <VolunteerForm />
@@ -284,7 +284,7 @@ export default function App() {
                 Meet Barr. El-Shaddai at a town hall or community forum near you.
               </p>
             </div>
-            <CampaignButton variant="solid">View Calendar</CampaignButton>
+            <CampaignButton variant="solid" onClick={() => scrollToId("events")}>View Calendar</CampaignButton>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
@@ -365,8 +365,14 @@ export default function App() {
             <div>
               <h4 className="text-xs uppercase tracking-wider mb-4" style={{ fontFamily: "var(--font-body)", color: "var(--leaf-green)" }}>Get Involved</h4>
               <ul className="space-y-2">
-                {["Support Campaign", "Volunteer", "Events & RSVP", "Voter Toolkit", "Contact"].map((link) => (
-                  <li key={link}><a href="#" className="text-sm transition-colors hover:text-[var(--leaf-green)]" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.75 }}>{link}</a></li>
+                {[
+                  { label: "Support Campaign", id: "donate" },
+                  { label: "Volunteer", id: "get-involved" },
+                  { label: "Events & RSVP", id: "events" },
+                  { label: "Voter Toolkit", id: "voter" },
+                  { label: "Contact", id: "get-involved" },
+                ].map((link) => (
+                  <li key={link.label}><a href={`#${link.id}`} onClick={(e) => { e.preventDefault(); scrollToId(link.id); }} className="text-sm transition-colors hover:text-[var(--leaf-green)] cursor-pointer" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.75 }}>{link.label}</a></li>
                 ))}
               </ul>
             </div>

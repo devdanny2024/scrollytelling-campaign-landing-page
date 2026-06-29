@@ -18,7 +18,7 @@ const faq = [
 
 export function VoterToolkit() {
   return (
-    <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--deep-pine)]">
+    <section id="voter" className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--deep-pine)]">
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
           className="text-center mb-10 md:mb-16">

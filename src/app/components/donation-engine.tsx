@@ -4,7 +4,21 @@ import { Heart, RefreshCw, CheckCircle, Shield } from "lucide-react";
 import { DonationThermometer } from "./donation-thermometer";
 import { API_BASE, PAYSTACK_PUBLIC_KEY } from "../config";
 
-const SUGGESTED = [1000, 5000, 10000, 25000, 50000, 100000];
+type Currency = "NGN" | "USD" | "GBP";
+
+const CURRENCIES: { code: Currency; symbol: string; label: string }[] = [
+  { code: "NGN", symbol: "₦", label: "Naira" },
+  { code: "USD", symbol: "$", label: "Dollar" },
+  { code: "GBP", symbol: "£", label: "Pound" },
+];
+
+const SUGGESTED: Record<Currency, number[]> = {
+  NGN: [1000, 5000, 10000, 25000, 50000, 100000],
+  USD: [5, 10, 25, 50, 100, 250],
+  GBP: [5, 10, 25, 50, 100, 250],
+};
+
+const SYMBOL: Record<Currency, string> = { NGN: "₦", USD: "$", GBP: "£" };
 
 const recentDonors = [
   { name: "Chukwuemeka A.", location: "Onitsha", amount: 50000, time: "2 min ago" },
@@ -15,16 +29,26 @@ const recentDonors = [
   { name: "Abdullahi M.", location: "Sokoto", amount: 10000, time: "24 min ago" },
 ];
 
-function formatNaira(val: number) {
-  if (val >= 1_000_000) return `₦${(val / 1_000_000).toFixed(1)}m`;
-  if (val >= 1_000) return `₦${(val / 1_000).toFixed(0)}k`;
-  return `₦${val.toLocaleString()}`;
+function formatMoney(val: number, cur: Currency) {
+  const sym = SYMBOL[cur];
+  if (cur === "NGN") {
+    if (val >= 1_000_000) return `${sym}${(val / 1_000_000).toFixed(1)}m`;
+    if (val >= 1_000) return `${sym}${(val / 1_000).toFixed(0)}k`;
+  }
+  return `${sym}${val.toLocaleString()}`;
 }
 
 export function DonationEngine() {
+  const [currency, setCurrency] = useState<Currency>("NGN");
   const [selected, setSelected] = useState<number | null>(10000);
   const [custom, setCustom] = useState("");
   const [recurring, setRecurring] = useState(false);
+
+  function switchCurrency(cur: Currency) {
+    setCurrency(cur);
+    setCustom("");
+    setSelected(SUGGESTED[cur][2]); // sensible mid default
+  }
   const [step, setStep] = useState<"amount" | "details" | "done">("amount");
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -42,8 +66,8 @@ export function DonationEngine() {
     const handler = Paystack.setup({
       key: PAYSTACK_PUBLIC_KEY,
       email: form.email,
-      amount: Math.round(amount * 100), // Paystack charges in kobo
-      currency: "NGN",
+      amount: Math.round(amount * 100), // Paystack charges in the minor unit (kobo/cents/pence)
+      currency,
       metadata: {
         name: form.name,
         phone: form.phone,
@@ -69,7 +93,7 @@ export function DonationEngine() {
   }
 
   return (
-    <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--deep-pine)]">
+    <section id="donate" className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-[var(--deep-pine)]">
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
           className="text-center mb-10 md:mb-16">
@@ -105,7 +129,7 @@ export function DonationEngine() {
                 </motion.div>
                 <h3 className="text-2xl md:text-3xl mt-5 mb-3" style={{ fontFamily: "var(--font-headline)", color: "var(--cream)" }}>Thank You, {form.name || "Supporter"}!</h3>
                 <p className="text-sm md:text-base mb-4" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.8 }}>
-                  Your {formatNaira(amount)}{recurring ? " monthly" : ""} contribution has been received. A receipt will be sent to {form.email || "your email"}.
+                  Your {formatMoney(amount, currency)}{recurring ? " monthly" : ""} contribution has been received. A receipt will be sent to {form.email || "your email"}.
                 </p>
                 <p className="text-xs" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.5 }}>Paid for by the Campaign of Barr. Ikeh El-Shaddai · NDC · 2027</p>
               </div>
@@ -116,6 +140,16 @@ export function DonationEngine() {
 
                 {step === "amount" && (
                   <>
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      {CURRENCIES.map((c) => (
+                        <button key={c.code} type="button" onClick={() => switchCurrency(c.code)}
+                          className="py-2.5 rounded-xl transition-all text-sm flex items-center justify-center gap-1.5"
+                          style={{ background: currency === c.code ? "var(--core-green)" : "rgba(255,255,255,0.07)", color: currency === c.code ? "white" : "var(--warm-sand)", fontFamily: "var(--font-body)", border: currency === c.code ? "none" : "1px solid rgba(255,255,255,0.12)" }}>
+                          <span style={{ fontSize: "15px" }}>{c.symbol}</span> {c.code}
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex items-center gap-3 mb-6 p-3 rounded-2xl" style={{ background: "rgba(255,255,255,0.05)" }}>
                       {["Give Once", "Monthly"].map((label, idx) => (
                         <button key={label} onClick={() => setRecurring(idx === 1)}
@@ -127,24 +161,24 @@ export function DonationEngine() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4">
-                      {SUGGESTED.map((amt) => (
+                      {SUGGESTED[currency].map((amt) => (
                         <button key={amt} onClick={() => { setSelected(amt); setCustom(""); }}
                           className="py-3 md:py-4 rounded-2xl transition-all hover:scale-105 text-sm"
                           style={{ background: selected === amt && !custom ? "var(--leaf-green)" : "rgba(255,255,255,0.07)", color: selected === amt && !custom ? "white" : "var(--warm-sand)", fontFamily: "var(--font-body)", border: selected === amt && !custom ? "none" : "1px solid rgba(255,255,255,0.12)" }}>
-                          {formatNaira(amt)}
+                          {formatMoney(amt, currency)}
                         </button>
                       ))}
                     </div>
 
                     <input type="text" value={custom} onChange={(e) => { setCustom(e.target.value); setSelected(null); }}
-                      placeholder="Other amount (₦)"
+                      placeholder={`Other amount (${SYMBOL[currency]})`}
                       className="w-full px-4 py-3 rounded-2xl focus:outline-none transition-all mb-6 text-sm"
                       style={{ background: "rgba(255,255,255,0.06)", border: custom ? "2px solid var(--leaf-green)" : "1.5px solid rgba(255,255,255,0.15)", color: "var(--cream)", fontFamily: "var(--font-body)" }} />
 
                     <button disabled={!amount} onClick={() => setStep("details")}
                       className="w-full py-4 rounded-2xl transition-all hover:scale-[1.02] disabled:opacity-40 text-base md:text-lg"
                       style={{ background: "var(--leaf-green)", color: "white", fontFamily: "var(--font-headline)" }}>
-                      {amount ? `Donate ${formatNaira(amount)}${recurring ? "/mo" : ""}` : "Select an amount"}
+                      {amount ? `Donate ${formatMoney(amount, currency)}${recurring ? "/mo" : ""}` : "Select an amount"}
                     </button>
                   </>
                 )}
@@ -153,7 +187,7 @@ export function DonationEngine() {
                   <form onSubmit={handleDonate}>
                     <div className="flex items-center gap-3 mb-5 p-4 rounded-2xl cursor-pointer" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid var(--leaf-green)" }} onClick={() => setStep("amount")}>
                       <div>
-                        <div style={{ fontFamily: "var(--font-headline)", color: "var(--cream)", fontSize: "18px" }}>{formatNaira(amount)}{recurring ? "/month" : ""}</div>
+                        <div style={{ fontFamily: "var(--font-headline)", color: "var(--cream)", fontSize: "18px" }}>{formatMoney(amount, currency)}{recurring ? "/month" : ""}</div>
                         <div style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.6, fontSize: "12px" }}>← Change amount</div>
                       </div>
                     </div>
@@ -199,7 +233,7 @@ export function DonationEngine() {
                     </div>
                   </div>
                   <div className="px-3 py-1 rounded-full text-xs md:text-sm" style={{ background: "rgba(74,158,74,0.2)", color: "var(--leaf-bright)", fontFamily: "var(--font-body)" }}>
-                    {formatNaira(donor.amount)}
+                    {formatMoney(donor.amount, "NGN")}
                   </div>
                 </motion.div>
               ))}

@@ -1,5 +1,6 @@
 import { motion, useScroll, useTransform } from "motion/react";
 import { CampaignButton } from "./campaign-button";
+import { scrollToId } from "../config";
 
 export function StickyCTA() {
   const { scrollY } = useScroll();
@@ -22,10 +23,10 @@ export function StickyCTA() {
           Join the Movement
         </div>
         <div className="flex gap-4">
-          <CampaignButton variant="ghost" className="!py-2 !px-6">
+          <CampaignButton variant="ghost" className="!py-2 !px-6" onClick={() => scrollToId("get-involved")}>
             Volunteer
           </CampaignButton>
-          <CampaignButton variant="solid" className="!py-2 !px-6">
+          <CampaignButton variant="solid" className="!py-2 !px-6" onClick={() => scrollToId("donate")}>
             Donate Now
           </CampaignButton>
         </div>

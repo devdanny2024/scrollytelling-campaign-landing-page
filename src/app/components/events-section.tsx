@@ -33,7 +33,7 @@ export function EventsSection() {
   const typeColors: Record<string, string> = { Rally: "var(--core-green)", "Town Hall": "var(--core-green)", Briefing: "#92400e" };
 
   return (
-    <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-white">
+    <section id="events" className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
           className="text-center mb-10 md:mb-14">
