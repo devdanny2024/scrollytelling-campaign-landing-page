@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Heart, RefreshCw, CheckCircle, Shield } from "lucide-react";
 import { DonationThermometer } from "./donation-thermometer";
 import { API_BASE, PAYSTACK_PUBLIC_KEY } from "../config";
@@ -20,14 +20,7 @@ const SUGGESTED: Record<Currency, number[]> = {
 
 const SYMBOL: Record<Currency, string> = { NGN: "₦", USD: "$", GBP: "£" };
 
-const recentDonors = [
-  { name: "Chukwuemeka A.", location: "Onitsha", amount: 50000, time: "2 min ago" },
-  { name: "Fatima B.", location: "Kano", amount: 10000, time: "5 min ago" },
-  { name: "Taiwo O.", location: "Ibadan", amount: 25000, time: "9 min ago" },
-  { name: "Anonymous", location: "Lagos", amount: 100000, time: "12 min ago" },
-  { name: "Ngozi E.", location: "Enugu", amount: 5000, time: "18 min ago" },
-  { name: "Abdullahi M.", location: "Sokoto", amount: 10000, time: "24 min ago" },
-];
+type Donor = { name: string; amount_kobo: number; currency: Currency; ago: string };
 
 function formatMoney(val: number, cur: Currency) {
   const sym = SYMBOL[cur];
@@ -52,6 +45,14 @@ export function DonationEngine() {
   const [step, setStep] = useState<"amount" | "details" | "done">("amount");
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [donors, setDonors] = useState<Donor[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/recent-donors.php`)
+      .then((r) => r.json())
+      .then((d) => setDonors(Array.isArray(d.donors) ? d.donors : []))
+      .catch(() => {});
+  }, []);
 
   const amount = custom ? parseInt(custom.replace(/\D/g, ""), 10) || 0 : selected ?? 0;
 
@@ -219,28 +220,38 @@ export function DonationEngine() {
           <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
             <h3 className="text-xl md:text-2xl mb-5" style={{ fontFamily: "var(--font-headline)", color: "var(--cream)" }}>Recent Supporters</h3>
             <div className="space-y-3">
-              {recentDonors.map((donor, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.07 }}
-                  className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 rounded-2xl"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--core-green)", color: "var(--cream)", fontFamily: "var(--font-headline)", fontSize: "15px" }}>
-                      {donor.name === "Anonymous" ? "★" : donor.name[0]}
+              {donors.length === 0 ? (
+                <div className="px-4 md:px-6 py-10 rounded-2xl text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p className="text-sm" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.75 }}>
+                    No donations yet. Be the first to support the movement.
+                  </p>
+                </div>
+              ) : (
+                donors.map((donor, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.07 }}
+                    className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 rounded-2xl"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--core-green)", color: "var(--cream)", fontFamily: "var(--font-headline)", fontSize: "15px" }}>
+                        {donor.name === "Anonymous" || !donor.name ? "★" : donor.name[0]}
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: "var(--font-body)", color: "var(--cream)", fontSize: "13px" }}>{donor.name}</div>
+                        <div style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.55, fontSize: "11px" }}>{donor.ago}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontFamily: "var(--font-body)", color: "var(--cream)", fontSize: "13px" }}>{donor.name}</div>
-                      <div style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.55, fontSize: "11px" }}>{donor.location} · {donor.time}</div>
+                    <div className="px-3 py-1 rounded-full text-xs md:text-sm" style={{ background: "rgba(74,158,74,0.2)", color: "var(--leaf-bright)", fontFamily: "var(--font-body)" }}>
+                      {formatMoney(donor.amount_kobo / 100, donor.currency)}
                     </div>
-                  </div>
-                  <div className="px-3 py-1 rounded-full text-xs md:text-sm" style={{ background: "rgba(74,158,74,0.2)", color: "var(--leaf-bright)", fontFamily: "var(--font-body)" }}>
-                    {formatMoney(donor.amount, "NGN")}
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))
+              )}
             </div>
-            <p className="mt-4 text-center text-xs" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.4 }}>
-              Donors who opted out of the public wall are not shown
-            </p>
+            {donors.length > 0 && (
+              <p className="mt-4 text-center text-xs" style={{ fontFamily: "var(--font-body)", color: "var(--warm-sand)", opacity: 0.4 }}>
+                Recent verified donations · names shown with initials for privacy
+              </p>
+            )}
           </motion.div>
         </div>
       </div>
